@@ -15,6 +15,7 @@ from transformers import BertForSequenceClassification, BertTokenizer
 train_path = '../liar_dataset/train.tsv'
 test_path = '../liar_dataset/test.tsv'
 val_path = '../liar_dataset/valid.tsv'
+gpt_path = '../liar_dataset/test.gpt.tsv'
 
 bert_length = 512
 
@@ -24,15 +25,26 @@ def to_onehot(a):
         if a[i]=='true':
             a_cat[i] = 0
         elif a[i]=='mostly-true':
-            a_cat[i] = 1
+            a_cat[i] = 0
         elif a[i]=='half-true':
-            a_cat[i] = 2
+            a_cat[i] = 0
         elif a[i]=='barely-true':
-            a_cat[i] = 3
+            a_cat[i] = 1
         elif a[i]=='false':
-            a_cat[i] = 4
+            a_cat[i] = 1
         elif a[i]=='pants-fire':
-            a_cat[i] = 5
+            a_cat[i] = 1
+        else:
+            print('Incorrect label')
+    return a_cat
+
+def to_onehot_gpt(a):
+    a_cat = [0]*len(a)
+    for i in range(len(a)):
+        if a[i] is True:
+            a_cat[i] = 0
+        elif a[i] is False:
+            a_cat[i] = 1
         else:
             print('Incorrect label')
     return a_cat
@@ -90,3 +102,17 @@ def get_liar_dataset():
     test_dataset = build_dataset(statements['test'],labels_onehot['test'],bert_length)
 
     return train_dataset, val_dataset, test_dataset
+
+def get_gpt_test_dataset():
+    gpt_df = pd.read_csv(gpt_path
+    , sep="\t", header=None)
+    gpt = gpt_df.values
+    
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    labels = {'test':gpt[:,1]}
+    statements = {'test':gpt[:,2]}
+
+    labels_onehot = {'test':to_onehot_gpt(labels['test'])}
+    test_dataset = build_dataset(statements['test'],labels_onehot['test'],bert_length)
+    return test_dataset
